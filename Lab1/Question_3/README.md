@@ -1,10 +1,10 @@
-# 🥧 Question 3: Pi (π) Calculation
+# Question 3: Pi (π) Calculation
 
-> **Numerical Integration with OpenMP Reduction**
+> Numerical Integration with OpenMP Reduction
 
 ---
 
-## � Student Information
+## 👤 Student Information
 
 | Field | Details |
 |-------|---------|
@@ -14,118 +14,147 @@
 
 ---
 
-## �📝 Problem Statement
+## 📝 Problem Statement
 
 Approximate the value of π using numerical integration:
 
 $$\pi = \int_0^1 \frac{4}{1 + x^2} dx$$
 
-This is approximated as a sum of rectangle areas using the midpoint rule.
+### Parameters
+- **Integration Method:** Midpoint rule (Riemann sum)
+- **Number of Steps:** 500,000,000 (500M)
+- **Objective:** Parallel computation with reduction
 
 ---
 
-## 🔬 Implementation Details
+## 🔬 Mathematical Background
 
-### Mathematical Basis
+### Derivation
 
 The function $f(x) = \frac{4}{1+x^2}$ integrated from 0 to 1 equals π.
 
+**Why?** Consider the derivative of $\arctan(x)$:
+
+$$\frac{d}{dx}\arctan(x) = \frac{1}{1+x^2}$$
+
+Therefore:
+$$\int_0^1 \frac{4}{1+x^2}dx = 4[\arctan(x)]_0^1 = 4\left(\frac{\pi}{4} - 0\right) = \pi$$
+
+### Numerical Approximation
+
 Using midpoint rule with N rectangles:
+
 $$\pi \approx \sum_{i=0}^{N-1} f(x_i) \cdot \Delta x$$
 
-where $x_i = (i + 0.5) \cdot \Delta x$ and $\Delta x = \frac{1}{N}$
+where:
+- $x_i = (i + 0.5) \cdot \Delta x$ (midpoint of rectangle)
+- $\Delta x = \frac{1}{N}$ (width of each rectangle)
 
-### OpenMP Implementation
+---
+
+## 🔬 Implementation
+
+### OpenMP Parallelization
 
 ```c
+double step = 1.0 / NUM_STEPS;
+double sum = 0.0;
+
 #pragma omp parallel for reduction(+:sum) num_threads(n) schedule(static)
 for (long i = 0; i < NUM_STEPS; i++) {
     double x = (i + 0.5) * step;
     sum += 4.0 / (1.0 + x * x);
 }
-pi = step * sum;
+
+double pi = step * sum;
 ```
 
 ### Key Features
-- **Reduction Clause:** Safely accumulates partial sums
-- **No Race Conditions:** Each thread maintains private sum
-- **High Precision:** 500 million integration steps
+
+- **`reduction(+:sum)`** - Each thread maintains private sum, combined at end
+- **Race-condition free** - No explicit locks needed
+- **Automatic synchronization** - OpenMP handles thread coordination
+- **High precision** - 500M steps ensure accuracy < 10⁻¹²
 
 ---
 
 ## 📊 Experimental Results
 
-**Test Environment:** Intel Core i5-1240P (12 cores, 16 threads)
+**Test Environment:** Intel Core i5-1240P (12 cores, 16 threads)  
+**Reference Value:** π = 3.141592653589793...
 
-| Threads | Time (sec) | Speedup | Computed π |
-|:-------:|:----------:|:-------:|:----------:|
-| 1 | 0.758 | 1.00x | 3.141592653589814 |
-| 2 | 0.346 | 2.19x | 3.141592653589770 |
-| 4 | 0.183 | 4.14x | 3.141592653589861 |
-| 6 | 0.154 | 4.92x | 3.141592653589641 |
-| 8 | 0.145 | 5.23x | 3.141592653589968 |
-| 10 | 0.118 | 6.42x | 3.141592653589968 |
-| 12 | 0.125 | 6.06x | 3.141592653589798 |
-| 14 | 0.112 | 6.77x | 3.141592653589800 |
-| 16 | 0.092 | **8.24x** | 3.141592653589879 |
+| Threads | Time (sec) | Speedup | Efficiency | Computed π | Error |
+|:-------:|:----------:|:-------:|:----------:|:----------:|:-----:|
+| 1 | 0.758 | 1.00x | 100.0% | 3.141592653589814 | 2.1e-14 |
+| 2 | 0.346 | 2.19x | 109.5% | 3.141592653589770 | 2.3e-14 |
+| 4 | 0.183 | 4.14x | 103.6% | 3.141592653589861 | 6.8e-14 |
+| 8 | 0.145 | 5.23x | 65.4% | 3.141592653589968 | 1.8e-13 |
+| 12 | 0.125 | 6.06x | 50.5% | 3.141592653589798 | 4.4e-15 |
+| 16 | 0.092 | **8.24x** | 51.5% | 3.141592653589879 | 8.7e-14 |
 
-**Reference:** π = 3.141592653589793...
-
-![Speedup vs Threads](./speedup_graph.png)
+**All computed values accurate to 12+ decimal places** ✓
 
 ---
 
 ## 💡 Analysis
 
-### Accuracy
-- **Error:** < 10^-12 (excellent precision)
-- **500M steps** ensure high numerical accuracy
-- Consistent results across all thread counts
-
 ### Performance Characteristics
 
-| Aspect | Observation |
-|--------|-------------|
-| **Scalability** | Good up to 16 threads |
-| **Max Speedup** | 8.24x with 16 threads |
-| **Efficiency** | ~51.5% parallel efficiency |
+**Peak Performance:**
+- Maximum speedup: **8.24x** at 16 threads
+- Parallel efficiency: **51.5%** at 16 threads
+- Good scalability compared to memory-bound operations
 
 ### Why Not Linear Speedup?
 
-1. **Reduction Overhead**
-   - Combining partial sums at thread join
-   - Synchronization cost increases with threads
+#### 1. Reduction Overhead
+- Each thread maintains private `sum` variable
+- At barrier, all partial sums must be combined
+- Synchronization cost increases with thread count
+- Binary tree reduction: O(log n) overhead
 
-2. **Memory Bandwidth**
-   - Still some memory contention
-   - Though mostly compute-bound
+#### 2. Memory Bandwidth
+- Still some memory contention for loop variables
+- Though mostly compute-bound (better than DAXPY)
 
-3. **Thread Management**
-   - Fork-join overhead per parallel region
-   - Scheduling and synchronization costs
+#### 3. Thread Management
+- Fork-join overhead per parallel region
+- Thread creation and synchronization costs
+- OS scheduling on hybrid P-core/E-core architecture
 
-### Comparison: Serial vs Parallel
+### Accuracy Analysis
+
+All results maintain **< 10⁻¹² absolute error**:
+- 500M steps provide excellent numerical precision
+- Parallel execution doesn't affect accuracy
+- IEEE 754 double precision sufficient
+- Order of summation slightly affects floating-point rounding
+
+---
+
+## 📈 Speedup Visualization
 
 ```
-Serial (1 thread):   0.758 seconds
-Parallel (16 threads): 0.092 seconds
-                      ─────────────────
-Speedup:             8.24x faster! 🚀
+Serial (1 thread):     ████████████████ 0.758s
+Parallel (16 threads): ██ 0.092s
+
+Speedup: 8.24x faster! 🚀
+Time Saved: 87.9%
 ```
 
 ---
 
-## 🔧 Build & Execute
+## 🔧 Compilation & Execution
 
 ```bash
-# Compile
-gcc -fopenmp Q3.c -o Q3.exe -O2
+# Compile with optimization
+gcc -fopenmp Q3.c -o Q3 -O2
 
-# Run with N threads
-./Q3.exe <num_threads>
+# Run (tests multiple thread counts automatically)
+./Q3
 
-# Example
-./Q3.exe 8
+# Or specify thread count
+OMP_NUM_THREADS=8 ./Q3
 ```
 
 ---
@@ -134,19 +163,42 @@ gcc -fopenmp Q3.c -o Q3.exe -O2
 
 | File | Description |
 |------|-------------|
-| `Q3.c` | Source with OpenMP reduction |
-| `Q3.exe` | Compiled executable |
+| `Q3.c` | Source code with OpenMP reduction |
 | `README.md` | This documentation |
 
 ---
 
 ## 🎯 Key Takeaways
 
-1. **Reduction** is essential for parallel summation
-2. Numerical integration is **embarrassingly parallel**
-3. OpenMP handles partial sum combination automatically
-4. Good speedup achieved with minimal code changes
+1. **Reduction clause** provides safe parallel accumulation
+2. **Good scalability** for compute-intensive reduction operations
+3. **Synchronization overhead** limits efficiency at high thread counts
+4. **Numerical accuracy** maintained in parallel execution
+5. **Better than memory-bound** but not as good as pure compute-bound
 
 ---
 
-**Ankit Kumar** | 102483012 | 3C75
+## 📚 Concepts Demonstrated
+
+- OpenMP reduction clause
+- Numerical integration (Riemann sum/midpoint rule)
+- Thread synchronization and barriers
+- Floating-point accuracy in parallel computing
+- Compute-bound operations with some overhead
+- Performance vs accuracy tradeoffs
+
+---
+
+## 🔍 Comparison with Other Questions
+
+| Question | Type | Peak Speedup | Efficiency |
+|----------|------|:------------:|:----------:|
+| Q1 DAXPY | Memory-bound | 1.79x | 44.7% |
+| Q2 MatMul | Compute-bound | 10.72x | 67.0% |
+| **Q3 Pi** | **Reduction** | **8.24x** | **51.5%** |
+
+Pi calculation falls between memory-bound and pure compute-bound operations due to reduction overhead.
+
+---
+
+**Completed by:** Ankit Kumar (102483012) - Group 3C75
