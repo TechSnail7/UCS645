@@ -4,7 +4,17 @@
 
 ---
 
-## 📝 Problem Statement
+## � Student Information
+
+| Field | Details |
+|-------|---------|
+| **Name** | Ankit Kumar |
+| **Roll No.** | 102483012 |
+| **Group** | 3C75 |
+
+---
+
+## �📝 Problem Statement
 
 Implement the DAXPY operation: `X[i] = a*X[i] + Y[i]`
 - **Vector Size:** 2^16 (65,536 elements)

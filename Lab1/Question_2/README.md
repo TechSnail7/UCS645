@@ -4,7 +4,17 @@
 
 ---
 
-## 📝 Problem Statement
+## � Student Information
+
+| Field | Details |
+|-------|---------|
+| **Name** | Ankit Kumar |
+| **Roll No.** | 102483012 |
+| **Group** | 3C75 |
+
+---
+
+## �📝 Problem Statement
 
 Implement parallel matrix multiplication `C = A × B` using two approaches:
 - **Part 1:** 1D Threading (row-wise parallelization)

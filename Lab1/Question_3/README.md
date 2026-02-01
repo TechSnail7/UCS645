@@ -4,7 +4,17 @@
 
 ---
 
-## 📝 Problem Statement
+## � Student Information
+
+| Field | Details |
+|-------|---------|
+| **Name** | Ankit Kumar |
+| **Roll No.** | 102483012 |
+| **Group** | 3C75 |
+
+---
+
+## �📝 Problem Statement
 
 Approximate the value of π using numerical integration:
 

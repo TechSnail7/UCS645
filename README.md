@@ -4,7 +4,17 @@
 
 ---
 
-## 📋 Repository Overview
+## � Student Information
+
+| Field | Details |
+|-------|---------|
+| **Name** | Ankit Kumar |
+| **Roll No.** | 102483012 |
+| **Group** | 3C75 |
+
+---
+
+## �📋 Repository Overview
 
 This repository showcases my work for the **UCS645: Parallel and Distributed Computing** course. Each lab is structured with detailed documentation, performance benchmarks, and analysis of parallel algorithms.
 
