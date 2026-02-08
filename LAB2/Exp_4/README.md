@@ -1,49 +1,36 @@
-## Experiment 4: Scheduling and Load Imbalance in OpenMP
+## Experiment 4 — Scheduling & Load Imbalance
 
-This experiment analyzes how different OpenMP scheduling strategies handle load imbalance when loop iterations have nonuniform computational costs. The workload is intentionally imbalanced, with iteration cost increasing proportionally to the loop index. The objective is to compare static, dynamic and guided scheduling policies and evaluate their effect on parallel execution time and imbalance.
+The loop has non-uniform iteration costs (later iterations do more work), so different scheduling policies handle it differently. Ran with 16 threads.
 
-### Workload Description
+Three policies tested:
+- `static` — equal contiguous chunks, assigned before execution
+- `dynamic,4` — small chunks handed out at runtime as threads finish
+- `guided` — starts with big chunks, shrinks over time
 
-Each iteration performs a computationally expensive loop. The number of inner loop iterations increases with the outer loop index i. As a result, later iterations require significantly more work, creating a natural imbalance.
+Metrics:
+- **T_max** = slowest thread's time
+- **T_avg** = average across threads
+- **Imbalance** = (T_max − T_avg) / T_avg
 
-The scheduling strategies examined are:
-1. schedule(static)
-2. schedule(dynamic, 4)
-3. schedule(guided)
-
-The program measures per-thread active time and computes three key metrics:
-- T_max: Maximum thread active time
-- T_avg: Average thread active time across all threads
-- Imbalance: (T_max – T_avg) / T_avg
-
-The program was executed on a machine with 16 threads.
+---
 
 ### Results
 
-| Schedule      | T_max (s)    | T_avg (s)      | Imbalance (%) |
-|---------------|--------------|----------------|----------------|
-| static        | 0.00011249   | 0.0000889959   | 26.40%        |
-| dynamic,4     | 0.00000000   | 0.00000000     | 18.73%        |
-| guided        | 0.00000000   | 0.00000000     | 27.63%        |
+| Schedule   | T_max (s) | T_avg (s) | Imbalance (%) |
+|------------|-----------|-----------|---------------|
+| static     | 2.600     | 2.598     | 0.06%         |
+| dynamic,4  | 1.910     | 1.910     | 0.05%         |
+| guided     | 1.640     | 1.630     | 0.65%         |
 
-### Interpretation
+- **Static** is the slowest overall (2.6s) — it can't redistribute work when iterations are uneven.
+- **Dynamic** has the lowest imbalance (0.05%) and decent time (1.91s), since threads grab new chunks the moment they're free.
+- **Guided** is actually the fastest wall-clock wise (1.64s) but has slightly higher imbalance (0.65%), probably because the tail end chunks don't divide evenly.
 
-#### Static Scheduling
-In static scheduling, the iteration space is divided into equal contiguous chunks before execution begins. When the workload varies per iteration, some threads finish much earlier than others. This results in idle threads waiting at synchronization points. The imbalance of 26.40 percent indicates that static scheduling is ineffective for uneven workloads.
+![Scheduling Comparison](./Graph1.png)
 
-#### Dynamic Scheduling
-Dynamic scheduling assigns small chunks of work to threads at runtime. When a thread finishes its chunk, it immediately requests another one. This approach reduces idle time and improves load distribution across threads. The imbalance value of 18.73 percent is the lowest among the three strategies, showing that dynamic scheduling adapts better to uneven iteration costs.
+---
 
-#### Guided Scheduling
-Guided scheduling begins with large chunk sizes that decrease over time. This strategy attempts to balance load more efficiently than static scheduling while reducing some of the overhead of dynamic scheduling. The measured imbalance of 27.63 percent is higher than dynamic scheduling. This can occur if the workload increases sharply toward the end of the loop, causing the smaller guided chunks to still create some imbalance.
+### Takeaway
 
-
-### Graphs
-
-
-### Conclusion
-
-The experiment demonstrates that dynamic scheduling provides the best handling of load imbalance for this workload, producing the lowest imbalance among the tested policies. Static scheduling performs poorly because the workload increases significantly across the iteration space. Guided scheduling performs moderately but is outperformed by pure dynamic scheduling in this specific scenario.
-
-These results reinforce the importance of choosing an appropriate scheduling strategy when workloads per iteration vary significantly.
+For uneven workloads, dynamic or guided scheduling beats static. Dynamic gives the most even distribution, while guided can be faster overall by reducing scheduling overhead with larger initial chunks.
 

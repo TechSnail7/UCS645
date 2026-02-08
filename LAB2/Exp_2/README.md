@@ -1,134 +1,78 @@
-## Experiment 2 — Speedup, Parallel Efficiency & Throughput
+## Experiment 2 — Speedup, Efficiency & Throughput
 
-This experiment evaluates the performance scaling of the OpenMP vector addition program by using the execution times recorded in Experiment 1.
+Taking the times from the vector add runs (`speedup_analysis.cpp`, N=10M), I computed speedup, efficiency and throughput to see how well the parallelism actually helps.
 
-The goal is to measure:
-- **Speedup (S(p))**
-- **Parallel Efficiency (E(p))**
-- **Throughput (work done per second)**
-
----
-
-### **A. Formulas Used**
-
-#### **Speedup**
-
-S(p) = T₁ / Tₚ
+**Formulas:**
+- Speedup: S(p) = T₁ / Tₚ
+- Efficiency: E(p) = S(p) / p
+- Throughput: N / Tₚ
 
 
-#### **Parallel Efficiency**
-
-E(p) = S(p) / p
-
-
-#### **Throughput**
-
-Throughput = N / Tₚ
-
-
-Where:
-- T₁ = execution time with 1 thread  
-- Tₚ = execution time with p threads  
-- N = total number of vector elements (100,000,000 in our program)
+Where T₁ is the single-thread time, Tₚ is time with p threads, N = 10,000,000.
 
 ---
 
-### **B. Recorded Times (from Experiment 1)**
+### Recorded Times
 
 | Threads | Time (s)      |
 |---------|---------------|
-| 1       | 0.231274      |
-| 2       | 0.257766      |
-| 4       | 0.137714      |
-| 8       | 0.098938      |
-| 16      | 0.076002      |
+| 1       | 0.032000      |
+| 2       | 0.020000      |
+| 4       | 0.013000      |
+| 8       | 0.012000      |
+| 16      | 0.013000      |
 
 ---
 
-### **C. Calculated Speedup**
-
-Speedup = T₁ / Tₚ
+### Speedup
 
 | Threads | Time (s) | Speedup |
 |---------|----------|---------|
-| 1       | 0.231274 | 1.00    |
-| 2       | 0.257766 | 0.90    |
-| 4       | 0.137714 | 1.68    |
-| 8       | 0.098938 | 2.34    |
-| 16      | 0.076002 | 3.04    |
+| 1       | 0.032000 | 1.00    |
+| 2       | 0.020000 | 1.60    |
+| 4       | 0.013000 | 2.46    |
+| 8       | 0.012000 | 2.67    |
+| 16      | 0.013000 | 2.46    |
 
 ---
 
-### **D. Parallel Efficiency**
-
-Efficiency = S(p) / p
+### Efficiency
 
 | Threads | Speedup | Efficiency |
 |---------|----------|------------|
 | 1       | 1.00     | 1.00 (100%) |
-| 2       | 0.90     | 0.45 (45%) |
-| 4       | 1.68     | 0.42 (42%) |
-| 8       | 2.34     | 0.29 (29%) |
-| 16      | 3.04     | 0.19 (19%) |
+| 2       | 1.60     | 0.80 (80%) |
+| 4       | 2.46     | 0.62 (62%) |
+| 8       | 2.67     | 0.33 (33%) |
+| 16      | 2.46     | 0.15 (15%) |
 
 ---
 
-### **E. Throughput Calculation**
-
-Given:
-
-N = 100,000,000 
-Throughput = N / Tₚ
+### Throughput (N / Tₚ)
 
 
 | Threads | Time (s) | Throughput (elements/sec) |
 |---------|----------|----------------------------|
-| 1       | 0.231274 | 432,435,000 |
-| 2       | 0.257766 | 387,850,000 |
-| 4       | 0.137714 | 726,293,000 |
-| 8       | 0.098938 | 1,010,697,000 |
-| 16      | 0.076002 | 1,315,720,000 |
+| 1       | 0.032000 | 312,500,000 |
+| 2       | 0.020000 | 500,000,000 |
+| 4       | 0.013000 | 769,230,769 |
+| 8       | 0.012000 | 833,333,333 |
+| 16      | 0.013000 | 769,230,769 |
 
 ---
 
-## **F. Observations & Discussion**
+### What I noticed
 
-### 1. **Speedup is not linear**
-Ideal speedup for 16 threads would be 16×.  
-Actual speedup is **3.04×** → indicating strong overheads.
+- Best speedup is 2.67x at 8 threads — far from the ideal 8x. Clearly memory-bound.
+- At 16 threads things get slightly *worse* (2.46x) because the thread overhead starts to outweigh the benefit.
+- Efficiency drops to 15% at 16 threads — most of the cores are just waiting on memory.
+- Throughput peaks at 8 threads (~833M elements/s) then goes back down.
 
-### 2. **Efficiency decreases as threads increase**
-This is expected due to:
-- Memory bandwidth limitations  
-- Cache contention  
-- Synchronization overhead  
-- Amdahl’s Law  
+Basically this is a classic memory-wall situation. Vector addition does almost no computation per element so the bottleneck is purely how fast we can read/write RAM.
 
-Efficiency drops to **19% at 16 threads**, indicating the program becomes **memory bound**.
-
-### 3. **Throughput increases but slowly**
-After 8 threads, throughput improves only slightly because:
-- RAM bandwidth is saturated  
-- The operation (A+B) is extremely memory heavy  
-- CPU cores are waiting for data → not computing
-
-### 4. **Graphs**
+### Graphs
 
 ![Execution Time v/s Threads](./Graph1.png)
 ![Speedup v/s Threads](./Graph2.png)
 ![Efficiency v/s Threads](./Graph3.png)
-
-
-
-### 5. **Conclusion**
-This vector addition kernel demonstrates:
-- Good performance up to ~8 threads  
-- Diminishing returns beyond that  
-- Clear signs of hitting the **memory wall**
-
-This behavior aligns with the known characteristics of memory bound workloads.
-
-
-
----
 
