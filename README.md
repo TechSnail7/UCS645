@@ -1,4 +1,5 @@
-📋 Repository Overview
+##📋 Repository Overview
+
 This repository documents my progress in UCS645, focusing on Shared Memory Parallelism via the OpenMP API. Each lab experiment transitions from sequential logic to multi-threaded execution to analyze performance gains.
 
 ---
